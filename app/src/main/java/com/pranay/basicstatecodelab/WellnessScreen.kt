@@ -6,18 +6,29 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun WellnessCounter(modifier: Modifier = Modifier) {
+fun WellnessScreen(
+    modifier: Modifier = Modifier,
+    wellnessViewModel: WellnessViewModel = viewModel()
+) {
     Column(modifier = modifier) {
         StateFullCounter()
-        val list = remember { getWellnessTasks().toMutableStateList() }
-        WellnessTaskList(list = list, onCloseTask = { list.remove(it) })
+        val list = wellnessViewModel.tasks
+        WellnessTaskList(list = list, onCloseTask = { wellnessViewModel.remove(it) },
+            onCheckedTask = { wellnessTask: WellnessTask, checked: Boolean ->
+                wellnessViewModel.changedTaskChecked(wellnessTask, checked)
+            }
+        )
     }
 }
 
@@ -61,31 +72,23 @@ fun WellnessTaskItem(
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Text(
-            modifier = modifier
+            modifier = Modifier
                 .weight(1f)
-                .padding(16.dp),
+                .padding(start = 16.dp),
             text = taskName
         )
-        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
         IconButton(onClick = onClose) {
             Icon(Icons.Filled.Close, contentDescription = "Close")
         }
     }
 }
 
-@Composable
-fun WellnessTaskItem(taskName: String, modifier: Modifier = Modifier, onClose: () -> Unit) {
-    var checkedState by rememberSaveable { mutableStateOf(false) }
-    WellnessTaskItem(
-        taskName = taskName,
-        checked = checkedState,
-        onCheckedChange = { newValue -> checkedState = newValue },
-        onClose = onClose,
-        modifier
-    )
-}
-
-fun getWellnessTasks() = List(30) { index: Int -> WellnessTask(index, "Task #$index") }
